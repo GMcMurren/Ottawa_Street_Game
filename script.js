@@ -7,13 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
   let guessed = new Set();
   let guessedAltNames = [];
   let guessedAltNameSet = new Set();
-  let altNameCasing = new Map(); // lowercase → original casing
+  let altNameCasing = new Map();
   let allStreets = new Map();
   let totalLength = 0;
   let guessedLength = 0;
   let sortMode = 'recency';
 
-  fetch('Ottawa_Urban_Streets_3.json')
+  fetch("Ottawa_Urban_Streets_4.json")
     .then(res => res.json())
     .then(data => {
       L.geoJSON(data, {
