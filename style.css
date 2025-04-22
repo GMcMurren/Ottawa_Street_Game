@@ -1,0 +1,31 @@
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+#map {
+  height: 90vh;
+  width: 100%;
+}
+#streetInput {
+  margin: 10px;
+  padding: 10px;
+  width: 300px;
+  font-size: 1.1em;
+}
+#progress-container {
+    width: 60%;
+    height: 20px;
+    background: #ddd;
+    margin: 0 auto 20px;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  
+  #progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(to right, #00cc66, #00aa44);
+    transition: width 0.3s ease-in-out;
+  }
