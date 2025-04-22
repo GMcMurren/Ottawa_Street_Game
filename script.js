@@ -8,7 +8,7 @@ let allStreets = new Map(); // name → { layers: [...], length: total length }
 let totalLength = 0;
 let guessedLength = 0;
 
-fetch('Ottawa_Urban_Streets_3.geojson')
+fetch('Ottawa_Urban_Streets_3.json')
   .then(res => res.json())
   .then(data => {
     L.geoJSON(data, {
