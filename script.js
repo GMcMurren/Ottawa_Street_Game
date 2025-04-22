@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
       L.geoJSON(data, {
         style: { color: "#666", weight: 1 },
         onEachFeature: (feature, layer) => {
-          const name = feature.properties.ROAD_NAME?.trim().toLowerCase();
+          const name = normalizeStreetName(feature.properties.ROAD_NAME || "");
           const altName = feature.properties.FULL_ROADN?.trim();
           const length = feature.properties.SHAPE_Leng || 0;
 
@@ -87,10 +87,17 @@ document.addEventListener('DOMContentLoaded', () => {
   function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
-
+  function normalizeStreetName(str){
+    return str
+      .trim()
+      .toLowerCase()
+      .normalize(NFD)
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s]/g, "");
+  }
   document.getElementById('streetInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') {
-      const input = e.target.value.trim().toLowerCase();
+      const input = normalizeStreetName(e.target.value);
       if (allStreets.has(input) && !guessed.has(input)) {
         guessed.add(input);
         const { layers, length, altNames } = allStreets.get(input);
