@@ -6,6 +6,10 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
 </head>
 <body>
+  <div id="user-info" style="display: none;">
+    <span id="user-name"></span>
+    <button id="login-btn">Log out</button>
+  </div>
   <h1>The Ottawa Street Guessing Game!</h1>
   <h2>Inspired by Chris Arvin's <a href="https://carvin.github.io/sf-street-names/">magnificent San Francisco street-guessing game</a>, I decided to make my own for urban Ottawa! </h2>
   <h2>Guesses are case-insensitive, accent-insensitive, and punctuation-insensitive.</h2>
@@ -19,9 +23,9 @@
 
   <button id="sort-toggle">Sort by: Alphabetical</button>
   <ul id="guessed-list"></ul>
-  <div id="user-info" style="display: none;">
-    <span id="user-name"></span>
-    <button id="login-btn">Log out</button>
+  <div id="user-info-2" style="display: none;">
+    <span id="user-name-2"></span>
+    <button id="logout-btn">Log out</button>
   </div>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
