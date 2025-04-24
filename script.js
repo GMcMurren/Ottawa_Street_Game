@@ -3,11 +3,16 @@ document.addEventListener('DOMContentLoaded', () => {
     apiKey: "AIzaSyAlXtXImG5XglMlYdkCpM0YroEiGhaiObc",
     authDomain: "ottawa-street-guessing.firebaseapp.com",
     projectId: "ottawa-street-guessing",
-    storageBucket: "ottawa-street-guessing.firebasestorage.app",
+    storageBucket: "ottawa-street-guessing.appspot.com",
     messagingSenderId: "364832541296",
     appId: "1:364832541296:web:8817df8fcc4d4f67b9c2b5",
     measurementId: "G-NHNTFEN1CT"
   };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+
   const map = L.map('map').setView([45.4215, -75.6972], 11);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
@@ -50,15 +55,16 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         renderer: L.canvas(),
       }).addTo(map);
-      
+
       document.getElementById('streetInput').addEventListener('keydown', e => {
         if (e.key === 'Enter') {
           const input = normalizeStreetName(e.target.value);
+          e.target.value = '';
           if (allStreets.has(input) && !guessed.has(input)) {
             guessed.add(input);
             const { layers, length, altNames } = allStreets.get(input);
             guessedLength += length;
-    
+
             layers.forEach(layer => {
               layer.setStyle({ color: "#007700", weight: 3 });
               const fullName = layer.feature.properties.FULL_ROADN?.trim();
@@ -66,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 layer.bindTooltip(fullName, { permanent: false, direction: 'top' });
               }
             });
-    
+
             for (const alt of altNames) {
               const altLower = alt.toLowerCase();
               if (!guessedAltNameSet.has(altLower)) {
@@ -77,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
               }
               addToGuessedList(altLower);
             }
-    
+
             updateProgress();
             const currentUser = auth.currentUser;
             if (currentUser) {
@@ -86,36 +92,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 .set({ guesses: Array.from(guessedAltNameSet) });
             }
           }
-          e.target.value = '';
         }
       });
     });
-  
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
 
   document.getElementById('login-btn').addEventListener('click', () => {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).then(result => {
-    const user = result.user;
-    console.log('Signed in:', user.displayName);
-
-  }).catch(console.error);
+    if (auth.currentUser) {
+      auth.signOut();
+    } else {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(console.error);
+    }
   });
 
   auth.onAuthStateChanged(user => {
     const userInfoDiv = document.getElementById('user-info');
     const userNameSpan = document.getElementById('user-name');
-  
+    const loginBtn = document.getElementById('login-btn');
+
     if (user) {
-      console.log('User signed in:', user.displayName);
-  
       userInfoDiv.style.display = 'block';
       userNameSpan.textContent = `Logged in as ${user.displayName}`;
-  
+      loginBtn.textContent = 'Log out';
+
       const userDoc = db.collection('users').doc(user.uid);
-  
+
       userDoc.get().then(doc => {
         if (doc.exists) {
           const savedGuesses = doc.data().guesses || [];
@@ -125,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
               guessed.add(normGuess);
               const { layers, length, altNames } = allStreets.get(normGuess);
               guessedLength += length;
-  
+
               layers.forEach(layer => {
                 layer.setStyle({ color: "#007700", weight: 3 });
                 const fullName = layer.feature.properties.FULL_ROADN?.trim();
@@ -133,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   layer.bindTooltip(fullName, { permanent: false, direction: 'top' });
                 }
               });
-  
+
               for (const alt of altNames) {
                 const altLower = alt.toLowerCase();
                 guessedAltNameSet.add(altLower);
@@ -144,16 +145,38 @@ document.addEventListener('DOMContentLoaded', () => {
               }
             }
           });
-  
           updateProgress();
         }
       });
     } else {
       userInfoDiv.style.display = 'none';
       userNameSpan.textContent = '';
+      loginBtn.textContent = 'Log in';
     }
   });
-      
+
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    auth.signOut().then(() => {
+      console.log('User signed out.');
+    }).catch(console.error);
+  });
+
+  document.getElementById('sort-toggle').addEventListener('click', () => {
+    sortMode = sortMode === 'recency' ? 'alphabetical' : 'recency';
+    const button = document.getElementById('sort-toggle');
+    button.textContent = `Sort by: ${capitalize(sortMode === 'recency' ? 'alphabetical' : 'recency')}`;
+    renderGuessedList();
+  });
+
+  function normalizeStreetName(str) {
+    return str
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s]/g, "");
+  }
+
   function addToGuessedList(name) {
     if (!guessedAltNames.includes(name)) {
       guessedAltNames.push(name);
@@ -190,29 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  document.getElementById('sort-toggle').addEventListener('click', () => {
-    sortMode = sortMode === 'recency' ? 'alphabetical' : 'recency';
-    const button = document.getElementById('sort-toggle');
-    button.textContent = `Sort by: ${capitalize(sortMode === 'recency' ? 'alphabetical' : 'recency')}`;
-    renderGuessedList();
-  });
-
   function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
-  
-  function normalizeStreetName(str){
-    return str
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9\s]/g, "");
-  }
-  
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    auth.signOut().then(() => {
-      console.log('User signed out.');
-    }).catch(console.error);
-  });
 });
