@@ -1,4 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
+  const firebaseConfig = {
+    apiKey: "AIzaSyAlXtXImG5XglMlYdkCpM0YroEiGhaiObc",
+    authDomain: "ottawa-street-guessing.firebaseapp.com",
+    projectId: "ottawa-street-guessing",
+    storageBucket: "ottawa-street-guessing.firebasestorage.app",
+    messagingSenderId: "364832541296",
+    appId: "1:364832541296:web:8817df8fcc4d4f67b9c2b5",
+    measurementId: "G-NHNTFEN1CT"
+  };
   const map = L.map('map').setView([45.4215, -75.6972], 11);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
@@ -81,11 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     });
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-  };
   
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
