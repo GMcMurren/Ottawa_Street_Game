@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let guessedLength = 0;
   let sortMode = 'recency';
 
-  fetch("Ottawa_Urban_Streets_NEW.json")
+  fetch("Ottawa_Urban_Streets_5000.json")
     .then(res => res.json())
     .then(data => {
       L.geoJSON(data, {
@@ -105,10 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         layers.forEach(layer => {
           layer.setStyle({ color: "#007700", weight: 3 });
-          altNames.forEach(alt => {
-            const altLower = alt.toLowerCase();
-            layer.bindTooltip(alt);
-          });
+          const fullName = layer.feature.properties.FULL_ROADN?.trim();
+          if (fullName) {
+            layer.bindTooltip(fullName, { permanent: false, direction: 'top' });
+          }
         });
 
         for (const alt of altNames) {
