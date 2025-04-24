@@ -192,8 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('sort-toggle').addEventListener('click', () => {
     sortMode = sortMode === 'recency' ? 'alphabetical' : 'recency';
-    const nextMode = sortMode === 'recency' ? 'alphabetical' : 'recency';
-    document.getElementById('sort-toggle').textContent = `Sort by: ${capitalize(nextMode)}`;
+    const button = document.getElementById('sort-toggle');
+    button.textContent = `Sort by: ${capitalize(sortMode === 'recency' ? 'alphabetical' : 'recency')}`;
     renderGuessedList();
   });
 
