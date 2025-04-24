@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  let map = L.map('map').setView([45.4215, -75.6972], 11);
+  const map = L.map('map').setView([45.4215, -75.6972], 11);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
   }).addTo(map);
@@ -42,10 +42,80 @@ document.addEventListener('DOMContentLoaded', () => {
         renderer: L.canvas(),
       }).addTo(map);
     });
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+  };
+  
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
+  document.getElementById('login-btn').addEventListener('click', () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).then(result => {
+    const user = result.user;
+    console.log('Signed in:', user.displayName);
+
+  }).catch(console.error);
+  });
+
+  auth.onAuthStateChanged(user => {
+    const userInfoDiv = document.getElementById('user-info');
+    const userNameSpan = document.getElementById('user-name');
+  
+    if (user) {
+      console.log('User signed in:', user.displayName);
+  
+      userInfoDiv.style.display = 'block';
+      userNameSpan.textContent = `Logged in as ${user.displayName}`;
+  
+      const userDoc = db.collection('users').doc(user.uid);
+  
+      userDoc.get().then(doc => {
+        if (doc.exists) {
+          const savedGuesses = doc.data().guesses || [];
+          savedGuesses.forEach(guess => {
+            const normGuess = normalizeStreetName(guess);
+            if (allStreets.has(normGuess) && !guessed.has(normGuess)) {
+              guessed.add(normGuess);
+              const { layers, length, altNames } = allStreets.get(normGuess);
+              guessedLength += length;
+  
+              layers.forEach(layer => {
+                layer.setStyle({ color: "#007700", weight: 3 });
+                const fullName = layer.feature.properties.FULL_ROADN?.trim();
+                if (fullName) {
+                  layer.bindTooltip(fullName, { permanent: false, direction: 'top' });
+                }
+              });
+  
+              for (const alt of altNames) {
+                const altLower = alt.toLowerCase();
+                guessedAltNameSet.add(altLower);
+                if (!altNameCasing.has(altLower)) {
+                  altNameCasing.set(altLower, alt);
+                }
+                addToGuessedList(altLower);
+              }
+            }
+          });
+  
+          updateProgress();
+        }
+      });
+    } else {
+      userInfoDiv.style.display = 'none';
+      userNameSpan.textContent = '';
+    }
+  });
+      
   function addToGuessedList(name) {
-    guessedAltNames.push(name);
-    renderGuessedList();
+    if (!guessedAltNames.includes(name)) {
+      guessedAltNames.push(name);
+      renderGuessedList();
+    }
   }
 
   function updateProgress() {
@@ -87,6 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
+  
   function normalizeStreetName(str){
     return str
       .trim()
@@ -95,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9\s]/g, "");
   }
+  
   document.getElementById('streetInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       const input = normalizeStreetName(e.target.value);
@@ -123,8 +195,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateProgress();
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          db.collection('users')
+            .doc(currentUser.uid)
+            .set({ guesses: Array.from(guessedAltNameSet) });
+        }
       }
       e.target.value = '';
     }
+  });
+  
+  document.getElementById('logout-btn').addEventListener('click', () => {
+    auth.signOut().then(() => {
+      console.log('User signed out.');
+    }).catch(console.error);
   });
 });
