@@ -97,13 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
   document.getElementById('login-btn').addEventListener('click', () => {
-    if (auth.currentUser) {
-      auth.signOut();
-    } else {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(console.error);
-    }
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(error => {
+      console.error("Sign-in error:", error);
+      alert("Sign-in failed. Check the console for details.");
+    });
   });
+
 
   auth.onAuthStateChanged(user => {
     const userInfoDiv = document.getElementById('user-info');
@@ -153,12 +153,6 @@ document.addEventListener('DOMContentLoaded', () => {
       userNameSpan.textContent = '';
       loginBtn.textContent = 'Log in';
     }
-  });
-
-  document.getElementById('logout-btn').addEventListener('click', () => {
-    auth.signOut().then(() => {
-      console.log('User signed out.');
-    }).catch(console.error);
   });
 
   document.getElementById('sort-toggle').addEventListener('click', () => {
