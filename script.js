@@ -41,6 +41,45 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         renderer: L.canvas(),
       }).addTo(map);
+      
+      document.getElementById('streetInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          const input = normalizeStreetName(e.target.value);
+          if (allStreets.has(input) && !guessed.has(input)) {
+            guessed.add(input);
+            const { layers, length, altNames } = allStreets.get(input);
+            guessedLength += length;
+    
+            layers.forEach(layer => {
+              layer.setStyle({ color: "#007700", weight: 3 });
+              const fullName = layer.feature.properties.FULL_ROADN?.trim();
+              if (fullName) {
+                layer.bindTooltip(fullName, { permanent: false, direction: 'top' });
+              }
+            });
+    
+            for (const alt of altNames) {
+              const altLower = alt.toLowerCase();
+              if (!guessedAltNameSet.has(altLower)) {
+                guessedAltNameSet.add(altLower);
+              }
+              if (!altNameCasing.has(altLower)) {
+                altNameCasing.set(altLower, alt);
+              }
+              addToGuessedList(altLower);
+            }
+    
+            updateProgress();
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+              db.collection('users')
+                .doc(currentUser.uid)
+                .set({ guesses: Array.from(guessedAltNameSet) });
+            }
+          }
+          e.target.value = '';
+        }
+      });
     });
   const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
@@ -166,45 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9\s]/g, "");
   }
-  
-  document.getElementById('streetInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      const input = normalizeStreetName(e.target.value);
-      if (allStreets.has(input) && !guessed.has(input)) {
-        guessed.add(input);
-        const { layers, length, altNames } = allStreets.get(input);
-        guessedLength += length;
-
-        layers.forEach(layer => {
-          layer.setStyle({ color: "#007700", weight: 3 });
-          const fullName = layer.feature.properties.FULL_ROADN?.trim();
-          if (fullName) {
-            layer.bindTooltip(fullName, { permanent: false, direction: 'top' });
-          }
-        });
-
-        for (const alt of altNames) {
-          const altLower = alt.toLowerCase();
-          if (!guessedAltNameSet.has(altLower)) {
-            guessedAltNameSet.add(altLower);
-          }
-          if (!altNameCasing.has(altLower)) {
-            altNameCasing.set(altLower, alt);
-          }
-          addToGuessedList(altLower);
-        }
-
-        updateProgress();
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          db.collection('users')
-            .doc(currentUser.uid)
-            .set({ guesses: Array.from(guessedAltNameSet) });
-        }
-      }
-      e.target.value = '';
-    }
-  });
   
   document.getElementById('logout-btn').addEventListener('click', () => {
     auth.signOut().then(() => {
